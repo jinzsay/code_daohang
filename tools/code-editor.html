@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码编辑器 - 在线工具导航</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdn.bytedance.com/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <style>
+        .editor-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar select, .toolbar button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .toolbar select {
+            min-width: 150px;
+        }
+
+        .toolbar button:hover, .toolbar select:hover {
+            opacity: 0.9;
+        }
+
+        .editor-main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .CodeMirror {
+            height: 500px;
+            border-radius: 10px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+        }
+
+        .output {
+            background-color: var(--background-color);
+            padding: 15px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            color: var(--text-color);
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                margin: 10px;
+                padding: 10px;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            .toolbar select, .toolbar button {
+                width: 100%;
+            }
+        }
+
+        .copy-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            animation: fadeInOut 2s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            返回首页
+        </a>
+        <header>
+            <h1>代码编辑器</h1>
+            <div class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+
+        <main>
+            <div class="editor-container">
+                <div class="toolbar">
+                    <select id="languageSelect">
+                        <option value="javascript">JavaScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="csharp">C#</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="swift">Swift</option>
+                        <option value="go">Go</option>
+                        <option value="rust">Rust</option>
+                        <option value="sql">SQL</option>
+                        <option value="xml">XML</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                    <select id="themeSelect">
+                        <option value="monokai">Monokai</option>
+                        <option value="default">Default</option>
+                        <option value="dracula">Dracula</option>
+                        <option value="material">Material</option>
+                        <option value="solarized">Solarized</option>
+                    </select>
+                    <button id="formatBtn">格式化代码</button>
+                    <button id="copyBtn">复制代码</button>
+                    <button id="clearBtn">清空编辑器</button>
+                </div>
+                <div class="editor-main">
+                    <textarea id="codeEditor"></textarea>
+                    <div id="output" class="output"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div class="copy-message" id="copyMessage">代码已复制到剪贴板！</div>
+    
+    <script src="../script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/ruby/ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/sql/sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.5.1/standalone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.5.1/parser-babel.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = CodeMirror.fromTextArea(document.getElementById('codeEditor'), {
+                lineNumbers: true,
+                theme: 'monokai',
+                mode: 'javascript',
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                indentUnit: 4,
+                tabSize: 4,
+                lineWrapping: true,
+                foldGutter: true,
+                gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+                extraKeys: {
+                    'Ctrl-Space': 'autocomplete',
+                    'Tab': (cm) => {
+                        if (cm.somethingSelected()) {
+                            cm.indentSelection('add');
+                        } else {
+                            cm.replaceSelection('    ', 'end');
+                        }
+                    }
+                }
+            });
+
+            // 设置初始示例代码
+            const defaultCode = `// 欢迎使用在线代码编辑器
+function greet(name) {
+    return \`Hello, \${name}!\`;
+}
+
+console.log(greet('World'));`;
+            editor.setValue(defaultCode);
+
+            // 语言切换
+            const languageSelect = document.getElementById('languageSelect');
+            const modeMap = {
+                'javascript': 'javascript',
+                'html': 'xml',
+                'css': 'css',
+                'python': 'python',
+                'java': 'text/x-java',
+                'cpp': 'text/x-c++src',
+                'csharp': 'text/x-csharp',
+                'php': 'php',
+                'ruby': 'ruby',
+                'swift': 'swift',
+                'go': 'go',
+                'rust': 'rust',
+                'sql': 'sql',
+                'xml': 'xml',
+                'markdown': 'markdown'
+            };
+
+            languageSelect.addEventListener('change', () => {
+                const mode = modeMap[languageSelect.value];
+                editor.setOption('mode', mode);
+            });
+
+            // 主题切换
+            const themeSelect = document.getElementById('themeSelect');
+            themeSelect.addEventListener('change', () => {
+                editor.setOption('theme', themeSelect.value);
+            });
+
+            // 格式化代码
+            const formatBtn = document.getElementById('formatBtn');
+            formatBtn.addEventListener('click', () => {
+                try {
+                    const code = editor.getValue();
+                    const formattedCode = prettier.format(code, {
+                        parser: 'babel',
+                        plugins: prettierPlugins,
+                        semi: true,
+                        singleQuote: true,
+                        tabWidth: 4
+                    });
+                    editor.setValue(formattedCode);
+                } catch (error) {
+                    console.error('格式化失败:', error);
+                }
+            });
+
+            // 复制代码
+            const copyBtn = document.getElementById('copyBtn');
+            const copyMessage = document.getElementById('copyMessage');
+            copyBtn.addEventListener('click', () => {
+                const code = editor.getValue();
+                navigator.clipboard.writeText(code).then(() => {
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 2000);
+                });
+            });
+
+            // 清空编辑器
+            const clearBtn = document.getElementById('clearBtn');
+            clearBtn.addEventListener('click', () => {
+                editor.setValue('');
+            });
+
+            // 自适应窗口大小
+            window.addEventListener('resize', () => {
+                editor.refresh();
+            });
+        });
+    </script>
+</body>
+</html> 

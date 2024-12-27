@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间转换 - 在线工具导航</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdn.bytedance.com/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .time-converter-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .converter-section {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            min-width: 120px;
+            color: var(--text-color);
+        }
+
+        .input-group input, .input-group select {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px;
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .result-group {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--card-background);
+            border-radius: 8px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: var(--background-color);
+            border-radius: 5px;
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .result-label {
+            color: var(--text-color);
+            font-weight: bold;
+        }
+
+        .result-value {
+            color: var(--primary-color);
+        }
+
+        .copy-btn {
+            padding: 3px 8px;
+            border: none;
+            border-radius: 3px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 0.8em;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.9;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .copy-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            animation: fadeInOut 2s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-group label {
+                min-width: auto;
+            }
+            
+            .input-group input, .input-group select {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            返回首页
+        </a>
+        <header>
+            <h1>时间转换</h1>
+            <div class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+
+        <main>
+            <div class="time-converter-container">
+                <div class="converter-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-clock"></i>
+                        时间戳转换
+                    </h2>
+                    <div class="input-group">
+                        <label>Unix时间戳</label>
+                        <input type="number" id="timestamp" placeholder="请输入时间戳">
+                        <button onclick="timeConverter.convertFromTimestamp()">转换</button>
+                    </div>
+                    <div class="result-group" id="timestampResult"></div>
+                </div>
+
+                <div class="converter-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        日期时间转换
+                    </h2>
+                    <div class="input-group">
+                        <label>日期时间</label>
+                        <input type="datetime-local" id="datetime">
+                        <button onclick="timeConverter.convertFromDateTime()">转换</button>
+                    </div>
+                    <div class="result-group" id="datetimeResult"></div>
+                </div>
+
+                <div class="converter-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-globe"></i>
+                        时区转换
+                    </h2>
+                    <div class="input-group">
+                        <label>选择时区</label>
+                        <select id="timezone"></select>
+                    </div>
+                    <div class="result-group" id="timezoneResult"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div class="copy-message" id="copyMessage">已复制到剪贴板！</div>
+    <script src="../script.js"></script>
+    <script>
+        const timeConverter = {
+            init() {
+                this.initTimezones();
+                this.updateCurrentTime();
+                setInterval(() => this.updateCurrentTime(), 1000);
+                
+                // 设置默认值
+                document.getElementById('timestamp').value = Math.floor(Date.now() / 1000);
+                document.getElementById('datetime').value = new Date().toISOString().slice(0, 16);
+                
+                this.convertFromTimestamp();
+                this.convertFromDateTime();
+            },
+
+            initTimezones() {
+                const timezones = [
+                    'Asia/Shanghai',
+                    'America/New_York',
+                    'Europe/London',
+                    'Asia/Tokyo',
+                    'Australia/Sydney',
+                    'Europe/Paris',
+                    'America/Los_Angeles',
+                    'Asia/Singapore',
+                    'Europe/Berlin',
+                    'Asia/Dubai'
+                ];
+
+                const select = document.getElementById('timezone');
+                timezones.forEach(tz => {
+                    const option = document.createElement('option');
+                    option.value = tz;
+                    option.textContent = tz;
+                    if (tz === 'Asia/Shanghai') {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                });
+            },
+
+            updateCurrentTime() {
+                const timezone = document.getElementById('timezone').value;
+                const now = new Date();
+                
+                const options = {
+                    timeZone: timezone,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                };
+
+                const formatter = new Intl.DateTimeFormat('zh-CN', options);
+                const timeString = formatter.format(now);
+
+                document.getElementById('timezoneResult').innerHTML = `
+                    <div class="result-item">
+                        <span class="result-label">${timezone}</span>
+                        <span class="result-value">
+                            ${timeString}
+                            <button class="copy-btn" onclick="timeConverter.copyToClipboard('${timeString}')">
+                                复制
+                            </button>
+                        </span>
+                    </div>
+                `;
+            },
+
+            convertFromTimestamp() {
+                const timestamp = document.getElementById('timestamp').value;
+                const date = new Date(timestamp * 1000);
+
+                const formats = {
+                    'ISO格式': date.toISOString(),
+                    '本地时间': date.toLocaleString('zh-CN'),
+                    'UTC时间': date.toUTCString(),
+                    '相对时间': this.getRelativeTime(date)
+                };
+
+                let html = '';
+                for (const [label, value] of Object.entries(formats)) {
+                    html += `
+                        <div class="result-item">
+                            <span class="result-label">${label}</span>
+                            <span class="result-value">
+                                ${value}
+                                <button class="copy-btn" onclick="timeConverter.copyToClipboard('${value}')">
+                                    复制
+                                </button>
+                            </span>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('timestampResult').innerHTML = html;
+            },
+
+            convertFromDateTime() {
+                const datetime = document.getElementById('datetime').value;
+                const date = new Date(datetime);
+
+                const formats = {
+                    'Unix时间戳': Math.floor(date.getTime() / 1000),
+                    'ISO格式': date.toISOString(),
+                    'UTC时间': date.toUTCString(),
+                    '相对时间': this.getRelativeTime(date)
+                };
+
+                let html = '';
+                for (const [label, value] of Object.entries(formats)) {
+                    html += `
+                        <div class="result-item">
+                            <span class="result-label">${label}</span>
+                            <span class="result-value">
+                                ${value}
+                                <button class="copy-btn" onclick="timeConverter.copyToClipboard('${value}')">
+                                    复制
+                                </button>
+                            </span>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('datetimeResult').innerHTML = html;
+            },
+
+            getRelativeTime(date) {
+                const now = new Date();
+                const diff = now - date;
+                const seconds = Math.floor(diff / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const hours = Math.floor(minutes / 60);
+                const days = Math.floor(hours / 24);
+
+                if (seconds < 60) {
+                    return `${seconds}秒${diff > 0 ? '前' : '后'}`;
+                } else if (minutes < 60) {
+                    return `${minutes}分钟${diff > 0 ? '前' : '后'}`;
+                } else if (hours < 24) {
+                    return `${hours}小时${diff > 0 ? '前' : '后'}`;
+                } else {
+                    return `${days}天${diff > 0 ? '前' : '后'}`;
+                }
+            },
+
+            copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const copyMessage = document.getElementById('copyMessage');
+                    copyMessage.style.display = 'block';
+                    setTimeout(() => {
+                        copyMessage.style.display = 'none';
+                    }, 2000);
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            timeConverter.init();
+            
+            // 时区选择事件
+            document.getElementById('timezone').addEventListener('change', () => {
+                timeConverter.updateCurrentTime();
+            });
+        });
+    </script>
+</body>
+</html> 

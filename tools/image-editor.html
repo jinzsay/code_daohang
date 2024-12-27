@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片处理 - 在线工具导航</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdn.bytedance.com/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .image-editor-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: 15px;
+            box-shadow: 0 4px 8px var(--shadow-color);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .toolbar button:hover {
+            opacity: 0.9;
+        }
+
+        .toolbar button i {
+            font-size: 1.2em;
+        }
+
+        .editor-main {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+
+        .controls {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            color: var(--text-color);
+            font-weight: bold;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+
+        .control-group input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid var(--primary-color);
+            border-radius: 3px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .canvas-container {
+            position: relative;
+            background-color: var(--background-color);
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--primary-color);
+            padding: 40px;
+            text-align: center;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .dropzone:hover {
+            background-color: rgba(74, 144, 226, 0.1);
+        }
+
+        .dropzone i {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .dropzone p {
+            margin: 5px 0;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--primary-color);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .editor-main {
+                grid-template-columns: 1fr;
+            }
+            
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            .toolbar button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            返回首页
+        </a>
+        <header>
+            <h1>图片处理</h1>
+            <div class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </div>
+        </header>
+
+        <main>
+            <div class="image-editor-container">
+                <div class="toolbar">
+                    <button id="uploadBtn">
+                        <i class="fas fa-upload"></i>
+                        上传图片
+                    </button>
+                    <button id="saveBtn" disabled>
+                        <i class="fas fa-download"></i>
+                        保存图片
+                    </button>
+                    <button id="resetBtn" disabled>
+                        <i class="fas fa-undo"></i>
+                        重置修改
+                    </button>
+                </div>
+                <div class="editor-main">
+                    <div class="controls">
+                        <div class="control-group">
+                            <label>亮度</label>
+                            <input type="range" id="brightness" min="-100" max="100" value="0">
+                            <input type="number" id="brightnessValue" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>对比度</label>
+                            <input type="range" id="contrast" min="-100" max="100" value="0">
+                            <input type="number" id="contrastValue" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>饱和度</label>
+                            <input type="range" id="saturation" min="-100" max="100" value="0">
+                            <input type="number" id="saturationValue" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>色相</label>
+                            <input type="range" id="hue" min="0" max="360" value="0">
+                            <input type="number" id="hueValue" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>模糊</label>
+                            <input type="range" id="blur" min="0" max="20" value="0">
+                            <input type="number" id="blurValue" value="0">
+                        </div>
+                        <div class="control-group">
+                            <label>锐化</label>
+                            <input type="range" id="sharpen" min="0" max="100" value="0">
+                            <input type="number" id="sharpenValue" value="0">
+                        </div>
+                    </div>
+                    <div class="canvas-container" id="canvasContainer">
+                        <div class="dropzone" id="dropzone">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>拖放图片到此处</p>
+                            <p>或点击上传按钮</p>
+                        </div>
+                        <canvas id="imageCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+    <script src="../script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageEditor = {
+                canvas: document.getElementById('imageCanvas'),
+                dropzone: document.getElementById('dropzone'),
+                fileInput: document.getElementById('fileInput'),
+                uploadBtn: document.getElementById('uploadBtn'),
+                saveBtn: document.getElementById('saveBtn'),
+                resetBtn: document.getElementById('resetBtn'),
+                originalImage: null,
+                currentImage: null,
+
+                init() {
+                    this.ctx = this.canvas.getContext('2d');
+                    this.bindEvents();
+                    this.setupControls();
+                },
+
+                bindEvents() {
+                    // 上传按钮点击事件
+                    this.uploadBtn.addEventListener('click', () => {
+                        this.fileInput.click();
+                    });
+
+                    // 文件选择事件
+                    this.fileInput.addEventListener('change', (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                            this.loadImage(e.target.files[0]);
+                        }
+                    });
+
+                    // 拖放事件
+                    this.dropzone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.dropzone.style.backgroundColor = 'rgba(74, 144, 226, 0.1)';
+                    });
+
+                    this.dropzone.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.dropzone.style.backgroundColor = '';
+                    });
+
+                    this.dropzone.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.dropzone.style.backgroundColor = '';
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            this.loadImage(e.dataTransfer.files[0]);
+                        }
+                    });
+
+                    // 保存按钮点击事件
+                    this.saveBtn.addEventListener('click', () => {
+                        const link = document.createElement('a');
+                        link.download = 'edited-image.png';
+                        link.href = this.canvas.toDataURL();
+                        link.click();
+                    });
+
+                    // 重置按钮点击事件
+                    this.resetBtn.addEventListener('click', () => {
+                        if (this.originalImage) {
+                            this.resetControls();
+                            this.drawImage(this.originalImage);
+                        }
+                    });
+                },
+
+                setupControls() {
+                    const controls = ['brightness', 'contrast', 'saturation', 'hue', 'blur', 'sharpen'];
+                    controls.forEach(control => {
+                        const slider = document.getElementById(control);
+                        const value = document.getElementById(`${control}Value`);
+                        
+                        slider.addEventListener('input', () => {
+                            value.value = slider.value;
+                            this.applyFilters();
+                        });
+
+                        value.addEventListener('input', () => {
+                            slider.value = value.value;
+                            this.applyFilters();
+                        });
+                    });
+                },
+
+                loadImage(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            this.originalImage = img;
+                            this.canvas.width = img.width;
+                            this.canvas.height = img.height;
+                            this.drawImage(img);
+                            this.dropzone.style.display = 'none';
+                            this.canvas.style.display = 'block';
+                            this.saveBtn.disabled = false;
+                            this.resetBtn.disabled = false;
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                drawImage(img) {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.drawImage(img, 0, 0);
+                    this.currentImage = img;
+                },
+
+                applyFilters() {
+                    if (!this.currentImage) return;
+
+                    const brightness = parseInt(document.getElementById('brightness').value);
+                    const contrast = parseInt(document.getElementById('contrast').value);
+                    const saturation = parseInt(document.getElementById('saturation').value);
+                    const hue = parseInt(document.getElementById('hue').value);
+                    const blur = parseInt(document.getElementById('blur').value);
+                    const sharpen = parseInt(document.getElementById('sharpen').value);
+
+                    this.ctx.filter = `
+                        brightness(${100 + brightness}%)
+                        contrast(${100 + contrast}%)
+                        saturate(${100 + saturation}%)
+                        hue-rotate(${hue}deg)
+                        blur(${blur}px)
+                    `;
+
+                    this.drawImage(this.originalImage);
+                    this.ctx.filter = 'none';
+                },
+
+                resetControls() {
+                    const controls = ['brightness', 'contrast', 'saturation', 'hue', 'blur', 'sharpen'];
+                    controls.forEach(control => {
+                        const slider = document.getElementById(control);
+                        const value = document.getElementById(`${control}Value`);
+                        slider.value = control === 'hue' ? '0' : '0';
+                        value.value = control === 'hue' ? '0' : '0';
+                    });
+                }
+            };
+
+            imageEditor.init();
+        });
+    </script>
+</body>
+</html> 
