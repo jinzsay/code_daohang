@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片水印工具</title>
+    <link rel="stylesheet" href="https://cdn.bytedance.com/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.bytedance.com/jszip/3.7.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .back-button {
+            margin-bottom: 20px;
+        }
+
+        .back-button a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+
+        .back-button a:hover {
+            background: #45a049;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        .controls {
+            background: #f8f8f8;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .preview-section {
+            flex: 1;
+        }
+
+        .section-title {
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            font-size: 1.1rem;
+            color: #333;
+            border-bottom: 1px solid #eee;
+        }
+
+        .preview-area {
+            margin-bottom: 30px;
+        }
+
+        .image-list {
+            margin-top: 15px;
+        }
+
+        .preview-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .preview-area img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .control-item {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        input[type="range"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            padding: 2px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            padding: 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            border: none;
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn.secondary {
+            background: #666;
+        }
+
+        .btn.secondary:hover {
+            background: #555;
+        }
+
+        .watermark-type {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .watermark-type button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .watermark-type button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .watermark-options > div {
+            display: none;
+        }
+
+        .watermark-options > div.active {
+            display: block;
+        }
+
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .position-grid button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .position-grid button.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .image-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .image-item {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .image-item .remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="back-button">
+            <a href="../index.html">
+                <i class="fas fa-arrow-left"></i>
+                返回首页
+            </a>
+        </div>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>图片上传</h3>
+                    <button class="btn" onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-images"></i> 选择图片
+                    </button>
+                    <input type="file" id="imageInput" multiple accept="image/*" style="display: none">
+                    <button class="btn" onclick="document.getElementById('folderInput').click()">
+                        <i class="fas fa-folder-open"></i> 选择文件夹
+                    </button>
+                    <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none">
+                </div>
+
+                <div class="control-group">
+                    <h3>水印类型</h3>
+                    <div class="watermark-type">
+                        <button class="active" data-type="text">文字水印</button>
+                        <button data-type="image">图片水印</button>
+                    </div>
+
+                    <div class="watermark-options">
+                        <div class="text-options active">
+                            <div class="control-item">
+                                <label>水印文字</label>
+                                <input type="text" id="watermarkText" placeholder="请输入水印文字" value="水印在这">
+                            </div>
+                            <div class="control-item">
+                                <label>文字颜色</label>
+                                <input type="color" id="textColor" value="#ff0000">
+                            </div>
+                            <div class="control-item">
+                                <label>字体大小 (12-100px)</label>
+                                <input type="number" id="fontSize" min="12" max="100" value="24">
+                            </div>
+                        </div>
+
+                        <div class="image-options">
+                            <div class="control-item">
+                                <label>水印图片</label>
+                                <button class="btn" onclick="document.getElementById('watermarkImageInput').click()">
+                                    选择水印图片
+                                </button>
+                                <input type="file" id="watermarkImageInput" accept="image/*" style="display: none">
+                            </div>
+                            <div class="control-item">
+                                <label>图片大小 (10-100%)</label>
+                                <input type="number" id="imageSize" min="10" max="100" value="30">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>水印设置</h3>
+                    <div class="control-item">
+                        <label>水印数量 (1-30个)</label>
+                        <input type="number" id="count" min="1" max="30" value="6">
+                    </div>
+
+                    <div class="control-item">
+                        <label>透明度: <span id="opacityValue">100%</span></label>
+                        <input type="range" id="opacity" min="0" max="100" value="100" 
+                            oninput="document.getElementById('opacityValue').textContent = this.value + '%'">
+                    </div>
+
+                    <div class="control-item">
+                        <label>旋转角度 (0-360°)</label>
+                        <input type="number" id="rotation" min="0" max="360" value="33">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>随机效果</h3>
+                    <div class="control-item">
+                        <label>
+                            <input type="checkbox" id="randomRotation"> 随机旋转
+                        </label>
+                    </div>
+                    <div class="control-item">
+                        <label>
+                            <input type="checkbox" id="randomSize"> 随机大小
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button class="btn" onclick="processImages()">
+                        <i class="fas fa-download"></i> 打包下载全部
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3 class="section-title">预览区</h3>
+                <div class="preview-area" id="previewArea">
+                    <div class="upload-hint">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖放图片到此处或点击选择图片按钮</p>
+                    </div>
+                </div>
+                <h3 class="section-title">已导入的图片，请点击图片预览</h3>
+                <div class="image-list" id="imageList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div>
+            <i class="fas fa-spinner fa-spin"></i>
+            处理中...
+        </div>
+    </div>
+
+    <script>
+        // 水印类型切换
+        document.querySelectorAll('.watermark-type button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.watermark-type button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                document.querySelectorAll('.watermark-options > div').forEach(div => div.classList.remove('active'));
+                document.querySelector(`.${button.dataset.type}-options`).classList.add('active');
+            });
+        });
+
+        // 位置选择
+        document.querySelectorAll('.position-grid button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.position-grid button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+            });
+        });
+
+        // 文件上传处理
+        const imageInput = document.getElementById('imageInput');
+        const folderInput = document.getElementById('folderInput');
+        const watermarkImageInput = document.getElementById('watermarkImageInput');
+        const previewArea = document.getElementById('previewArea');
+        const imageList = document.getElementById('imageList');
+        const loading = document.getElementById('loading');
+
+        // 拖放处理
+        previewArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            previewArea.classList.add('dragover');
+        });
+
+        previewArea.addEventListener('dragleave', () => {
+            previewArea.classList.remove('dragover');
+        });
+
+        previewArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            previewArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        imageInput.addEventListener('change', () => handleFiles(imageInput.files));
+        folderInput.addEventListener('change', () => handleFiles(folderInput.files));
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        addImageToList(e.target.result, file.name);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function addImageToList(src, name) {
+            const div = document.createElement('div');
+            div.className = 'image-item';
+            div.innerHTML = `
+                <img src="${src}" alt="${name}" onclick="previewImage(this)">
+                <button class="remove" onclick="this.parentElement.remove()">×</button>
+            `;
+            imageList.appendChild(div);
+            
+            // 自动预览第一张图片
+            if (imageList.children.length === 1) {
+                previewImage(div.querySelector('img'));
+            }
+        }
+
+        // 预览图片
+        function previewImage(img) {
+            const previewArea = document.getElementById('previewArea');
+            previewArea.innerHTML = '';
+            const canvas = document.createElement('canvas');
+            canvas.id = 'previewCanvas';
+            previewArea.appendChild(canvas);
+            updatePreview(img);
+
+            // 添加所有控件的change事件监听
+            document.querySelectorAll('input, select').forEach(input => {
+                input.addEventListener('input', () => updatePreview(img));
+            });
+            document.querySelectorAll('.watermark-type button, .position-grid button').forEach(button => {
+                button.addEventListener('click', () => updatePreview(img));
+            });
+        }
+
+        // 更新预览
+        async function updatePreview(sourceImg) {
+            const canvas = document.getElementById('previewCanvas');
+            if (!canvas || !sourceImg) return;
+
+            const watermarkType = document.querySelector('.watermark-type button.active').dataset.type;
+            const settings = {
+                text: document.getElementById('watermarkText').value,
+                textColor: document.getElementById('textColor').value,
+                fontSize: parseInt(document.getElementById('fontSize').value),
+                opacity: parseInt(document.getElementById('opacity').value) / 100,
+                rotation: parseInt(document.getElementById('rotation').value),
+                count: parseInt(document.getElementById('count').value),
+                randomRotation: document.getElementById('randomRotation').checked,
+                randomSize: document.getElementById('randomSize').checked,
+                imageSize: parseInt(document.getElementById('imageSize').value)
+            };
+
+            // 设置画布大小
+            const maxWidth = previewArea.clientWidth - 40;
+            const maxHeight = previewArea.clientHeight - 40;
+            const ratio = Math.min(maxWidth / sourceImg.naturalWidth, maxHeight / sourceImg.naturalHeight);
+            canvas.width = sourceImg.naturalWidth * ratio;
+            canvas.height = sourceImg.naturalHeight * ratio;
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制原图
+            ctx.drawImage(sourceImg, 0, 0, canvas.width, canvas.height);
+
+            // 应用水印
+            ctx.globalAlpha = settings.opacity;
+            
+            // 计算最佳水印布局
+            const optimizedSettings = optimizeWatermarkLayout(canvas.width, canvas.height, settings, watermarkType);
+            
+            if (watermarkType === 'text' && settings.text) {
+                ctx.fillStyle = settings.textColor;
+                ctx.font = `${optimizedSettings.fontSize}px Arial`;
+                const textWidth = ctx.measureText(settings.text).width;
+                const textHeight = optimizedSettings.fontSize;
+
+                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                let count = 0;
+
+                for (let row = 0; row < rows && count < settings.count; row++) {
+                    for (let col = 0; col < cols && count < settings.count; col++) {
+                        const x = col * gridWidth + margin + (gridWidth - textWidth) / 2;
+                        const y = row * gridHeight + margin + (gridHeight + textHeight) / 2;
+                        const rotation = settings.randomRotation ? 
+                            Math.random() * 360 : 
+                            settings.rotation;
+
+                        ctx.save();
+                        ctx.translate(x, y);
+                        ctx.rotate(rotation * Math.PI / 180);
+                        ctx.fillText(settings.text, 0, 0);
+                        ctx.restore();
+                        count++;
+                    }
+                }
+            } else if (watermarkType === 'image') {
+                const watermarkImage = document.getElementById('watermarkImageInput').files[0];
+                if (watermarkImage) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = new Image();
+                            img.onload = function() {
+                                const aspectRatio = img.width / img.height;
+                                const watermarkWidth = optimizedSettings.watermarkSize;
+                                const watermarkHeight = watermarkWidth / aspectRatio;
+
+                                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                                let count = 0;
+
+                                for (let row = 0; row < rows && count < settings.count; row++) {
+                                    for (let col = 0; col < cols && count < settings.count; col++) {
+                                        const x = col * gridWidth + margin + (gridWidth - watermarkWidth) / 2;
+                                        const y = row * gridHeight + margin + (gridHeight - watermarkHeight) / 2;
+                                        const rotation = settings.randomRotation ? 
+                                            Math.random() * 360 : 
+                                            settings.rotation;
+
+                                        ctx.save();
+                                        ctx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                                        ctx.rotate(rotation * Math.PI / 180);
+                                        ctx.drawImage(img, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
+                                        ctx.restore();
+                                        count++;
+                                    }
+                                }
+                                resolve(canvas);
+                            };
+                            img.onerror = reject;
+                            img.src = e.target.result;
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(watermarkImage);
+                    });
+                }
+            }
+        }
+
+        // 优化水印布局
+        function optimizeWatermarkLayout(canvasWidth, canvasHeight, settings, type) {
+            // 计算最佳水印大小和间距
+            const minMargin = 10; // 减小最小边距
+            const spacing = 0.1; // 减小水印之间的间距比例
+            
+            let baseSize;
+            if (type === 'text') {
+                // 减小文字水印基础大小
+                baseSize = Math.min(canvasWidth * 0.1, settings.fontSize);
+            } else {
+                // 减小图片水印基础大小
+                baseSize = Math.min(canvasWidth * 0.15, canvasWidth * (settings.imageSize / 100));
+            }
+
+            // 计算网格
+            const effectiveWidth = canvasWidth - 2 * minMargin;
+            const effectiveHeight = canvasHeight - 2 * minMargin;
+            
+            // 计算最佳行列数以匹配目标水印数量
+            const targetCount = settings.count;
+            const aspectRatio = canvasWidth / canvasHeight;
+            
+            // 优化行列数计算
+            let cols = Math.ceil(Math.sqrt(targetCount * aspectRatio));
+            let rows = Math.ceil(targetCount / cols);
+
+            // 确保行列数的乘积正好等于目标数量
+            while (rows * cols > targetCount) {
+                if ((cols - 1) * rows >= targetCount) {
+                    cols--;
+                } else if (cols * (rows - 1) >= targetCount) {
+                    rows--;
+                } else {
+                    break;
+                }
+            }
+
+            // 如果行列数的乘积小于目标数量，增加行数或列数
+            if (rows * cols < targetCount) {
+                if (cols <= rows) {
+                    cols++;
+                } else {
+                    rows++;
+                }
+            }
+
+            // 调整网格大小
+            const gridWidth = effectiveWidth / cols;
+            const gridHeight = effectiveHeight / rows;
+            
+            // 计算水印大小，考虑间距
+            const watermarkSize = Math.min(
+                gridWidth * (1 - spacing),
+                gridHeight * (1 - spacing),
+                baseSize
+            );
+
+            // 计算边距，确保水印均匀分布
+            const horizontalMargin = (canvasWidth - cols * gridWidth) / 2;
+            const verticalMargin = (canvasHeight - rows * gridHeight) / 2;
+            const margin = Math.max(horizontalMargin, verticalMargin, minMargin);
+
+            // 保持用户设置的旋转角度
+            const rotation = settings.rotation;
+            const maxRotation = 360; // 允许完整的旋转角度
+
+            return {
+                fontSize: type === 'text' ? watermarkSize : settings.fontSize,
+                watermarkSize: watermarkSize,
+                rows: rows,
+                cols: cols,
+                gridWidth: gridWidth,
+                gridHeight: gridHeight,
+                margin: margin,
+                rotation: rotation,
+                maxRotation: maxRotation,
+                totalCount: rows * cols
+            };
+        }
+
+        // 水印图片上传处理
+        watermarkImageInput.addEventListener('change', function() {
+            const img = document.querySelector('.image-list img');
+            if (img) {
+                updatePreview(img);
+            }
+        });
+
+        // 处理图片导出
+        async function processImage(img, type, position, settings) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制原图
+            ctx.drawImage(img, 0, 0);
+
+            // 应用水印
+            ctx.globalAlpha = settings.opacity;
+            
+            // 计算最佳水印布局
+            const optimizedSettings = optimizeWatermarkLayout(canvas.width, canvas.height, settings, type);
+            
+            if (type === 'text' && settings.text) {
+                ctx.fillStyle = settings.textColor;
+                ctx.font = `${optimizedSettings.fontSize}px Arial`;
+                const textWidth = ctx.measureText(settings.text).width;
+                const textHeight = optimizedSettings.fontSize;
+
+                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                let count = 0;
+
+                for (let row = 0; row < rows && count < settings.count; row++) {
+                    for (let col = 0; col < cols && count < settings.count; col++) {
+                        const x = col * gridWidth + margin + (gridWidth - textWidth) / 2;
+                        const y = row * gridHeight + margin + (gridHeight + textHeight) / 2;
+                        const rotation = settings.randomRotation ? 
+                            Math.random() * 360 : 
+                            settings.rotation;
+
+                        ctx.save();
+                        ctx.translate(x, y);
+                        ctx.rotate(rotation * Math.PI / 180);
+                        ctx.fillText(settings.text, 0, 0);
+                        ctx.restore();
+                        count++;
+                    }
+                }
+            } else if (type === 'image') {
+                const watermarkImage = document.getElementById('watermarkImageInput').files[0];
+                if (watermarkImage) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = new Image();
+                            img.onload = function() {
+                                const aspectRatio = img.width / img.height;
+                                const watermarkWidth = optimizedSettings.watermarkSize;
+                                const watermarkHeight = watermarkWidth / aspectRatio;
+
+                                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                                let count = 0;
+
+                                for (let row = 0; row < rows && count < settings.count; row++) {
+                                    for (let col = 0; col < cols && count < settings.count; col++) {
+                                        const x = col * gridWidth + margin + (gridWidth - watermarkWidth) / 2;
+                                        const y = row * gridHeight + margin + (gridHeight - watermarkHeight) / 2;
+                                        const rotation = settings.randomRotation ? 
+                                            Math.random() * 360 : 
+                                            settings.rotation;
+
+                                        ctx.save();
+                                        ctx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                                        ctx.rotate(rotation * Math.PI / 180);
+                                        ctx.drawImage(img, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
+                                        ctx.restore();
+                                        count++;
+                                    }
+                                }
+                                resolve(canvas);
+                            };
+                            img.onerror = reject;
+                            img.src = e.target.result;
+                        };
+                        reader.onerror = reject;
+                        reader.readAsDataURL(watermarkImage);
+                    });
+                }
+            }
+            
+            return canvas;
+        }
+
+        // 水印处理
+        async function processImages() {
+            const images = document.querySelectorAll('.image-list img');
+            if (images.length === 0) {
+                alert('请先上传图片');
+                return;
+            }
+
+            loading.style.display = 'flex';
+            const zip = new JSZip();
+            const watermarkType = document.querySelector('.watermark-type button.active').dataset.type;
+            const settings = {
+                text: document.getElementById('watermarkText').value,
+                textColor: document.getElementById('textColor').value,
+                fontSize: parseInt(document.getElementById('fontSize').value),
+                opacity: parseInt(document.getElementById('opacity').value) / 100,
+                rotation: parseInt(document.getElementById('rotation').value),
+                count: parseInt(document.getElementById('count').value),
+                randomRotation: document.getElementById('randomRotation').checked,
+                randomSize: document.getElementById('randomSize').checked,
+                imageSize: parseInt(document.getElementById('imageSize').value)
+            };
+
+            try {
+                for (let i = 0; i < images.length; i++) {
+                    const canvas = await processImage(images[i], watermarkType, null, settings);
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    zip.file(`watermark_${i + 1}.png`, blob);
+                }
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'watermarked_images.zip';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('处理图片时出错: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html> 
