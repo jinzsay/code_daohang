@@ -84,6 +84,9 @@ body {
     margin-left: var(--sidebar-width);
     padding: 30px 40px;
     max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 header {
@@ -111,9 +114,11 @@ h1 {
 }
 
 .author {
-    font-size: 0.95rem;
+    text-align: right;
+    padding: 20px;
     color: var(--text-color);
     opacity: 0.8;
+    margin-top: auto;
 }
 
 .author a {

@@ -3,376 +3,508 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片处理 - 在线工具导航</title>
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="https://cdn.bytedance.com/font-awesome/6.0.0/css/all.min.css">
+    <title>图片处理工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .image-editor-container {
+        body {
+            font-family: 'Arial', sans-serif;
             max-width: 1200px;
-            margin: 20px auto;
+            margin: 0 auto;
             padding: 20px;
-            background-color: var(--card-background);
-            border-radius: 15px;
-            box-shadow: 0 4px 8px var(--shadow-color);
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .toolbar {
-            display: flex;
-            gap: 10px;
+        .back-button {
             margin-bottom: 20px;
-            flex-wrap: wrap;
         }
 
-        .toolbar button {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            background-color: var(--primary-color);
-            color: white;
-            cursor: pointer;
-            transition: opacity 0.3s;
-            display: flex;
+        .back-button a {
+            display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background 0.3s ease;
         }
 
-        .toolbar button:hover {
-            opacity: 0.9;
+        .back-button a:hover {
+            background: #45a049;
         }
 
-        .toolbar button i {
-            font-size: 1.2em;
-        }
-
-        .editor-main {
+        .main-content {
             display: grid;
-            grid-template-columns: 250px 1fr;
+            grid-template-columns: 300px 1fr;
             gap: 20px;
         }
 
         .controls {
-            background-color: var(--background-color);
+            background: #f8f8f8;
             padding: 20px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            border-radius: 4px;
         }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+        .preview-section {
+            flex: 1;
         }
 
-        .control-group label {
-            color: var(--text-color);
-            font-weight: bold;
+        .section-title {
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            font-size: 1.1rem;
+            color: #333;
+            border-bottom: 1px solid #eee;
         }
 
-        .control-group input[type="range"] {
-            width: 100%;
-        }
-
-        .control-group input[type="number"] {
-            width: 60px;
-            padding: 5px;
-            border: 1px solid var(--primary-color);
-            border-radius: 3px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-        }
-
-        .canvas-container {
-            position: relative;
-            background-color: var(--background-color);
-            border-radius: 10px;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .preview-area {
+            border: 2px dashed #ddd;
+            border-radius: 4px;
             min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
         }
 
-        #imageCanvas {
+        .preview-area.dragover {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .preview-area img {
             max-width: 100%;
             max-height: 100%;
         }
 
-        .dropzone {
-            border: 2px dashed var(--primary-color);
-            padding: 40px;
-            text-align: center;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .dropzone:hover {
-            background-color: rgba(74, 144, 226, 0.1);
-        }
-
-        .dropzone i {
-            font-size: 3em;
-            margin-bottom: 10px;
-            color: var(--primary-color);
-        }
-
-        .dropzone p {
-            margin: 5px 0;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: var(--primary-color);
-            text-decoration: none;
+        .control-group {
             margin-bottom: 20px;
         }
 
-        .back-link:hover {
-            opacity: 0.8;
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .control-item {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
         }
 
         @media (max-width: 768px) {
-            .editor-main {
+            .main-content {
                 grid-template-columns: 1fr;
-            }
-            
-            .toolbar {
-                flex-direction: column;
-            }
-            
-            .toolbar button {
-                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="../index.html" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            返回首页
-        </a>
-        <header>
-            <h1>图片处理</h1>
-            <div class="theme-toggle">
-                <i class="fas fa-moon"></i>
-            </div>
-        </header>
+        <div class="back-button">
+            <a href="../index.html">
+                <i class="fas fa-arrow-left"></i>
+                返回首页
+            </a>
+        </div>
 
-        <main>
-            <div class="image-editor-container">
-                <div class="toolbar">
-                    <button id="uploadBtn">
-                        <i class="fas fa-upload"></i>
-                        上传图片
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>图片上传</h3>
+                    <button class="btn" onclick="document.getElementById('imageInput').click()">
+                        <i class="fas fa-upload"></i> 选择图片
                     </button>
-                    <button id="saveBtn" disabled>
-                        <i class="fas fa-download"></i>
-                        保存图片
-                    </button>
-                    <button id="resetBtn" disabled>
-                        <i class="fas fa-undo"></i>
-                        重置修改
+                    <input type="file" id="imageInput" accept="image/*" style="display: none">
+                    <div class="btn-group" style="margin-top: 10px;">
+                        <button class="btn" onclick="undoLastStep()">
+                            <i class="fas fa-undo"></i> 上一步
+                        </button>
+                        <button class="btn" onclick="resetImage()">
+                            <i class="fas fa-sync-alt"></i> 重置
+                        </button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>基础调整</h3>
+                    <div class="control-item">
+                        <label>亮度 <span id="brightnessValue">100%</span></label>
+                        <input type="range" id="brightness" min="0" max="200" value="100">
+                    </div>
+                    <div class="control-item">
+                        <label>对比度 <span id="contrastValue">100%</span></label>
+                        <input type="range" id="contrast" min="0" max="200" value="100">
+                    </div>
+                    <div class="control-item">
+                        <label>饱和度 <span id="saturationValue">100%</span></label>
+                        <input type="range" id="saturation" min="0" max="200" value="100">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>滤镜效果</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="applyFilter('none')">原图</button>
+                        <button class="btn" onclick="applyFilter('grayscale')">黑白</button>
+                        <button class="btn" onclick="applyFilter('sepia')">复古</button>
+                        <button class="btn" onclick="applyFilter('blur')">模糊</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>旋转与翻转</h3>
+                    <div class="btn-group">
+                        <button class="btn" onclick="rotateImage(-90)">向左旋转</button>
+                        <button class="btn" onclick="rotateImage(90)">向右旋转</button>
+                        <button class="btn" onclick="flipImage('horizontal')">水平翻转</button>
+                        <button class="btn" onclick="flipImage('vertical')">垂直翻转</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <button class="btn" onclick="downloadImage()">
+                        <i class="fas fa-download"></i> 下载图片
                     </button>
                 </div>
-                <div class="editor-main">
-                    <div class="controls">
-                        <div class="control-group">
-                            <label>亮度</label>
-                            <input type="range" id="brightness" min="-100" max="100" value="0">
-                            <input type="number" id="brightnessValue" value="0">
-                        </div>
-                        <div class="control-group">
-                            <label>对比度</label>
-                            <input type="range" id="contrast" min="-100" max="100" value="0">
-                            <input type="number" id="contrastValue" value="0">
-                        </div>
-                        <div class="control-group">
-                            <label>饱和度</label>
-                            <input type="range" id="saturation" min="-100" max="100" value="0">
-                            <input type="number" id="saturationValue" value="0">
-                        </div>
-                        <div class="control-group">
-                            <label>色相</label>
-                            <input type="range" id="hue" min="0" max="360" value="0">
-                            <input type="number" id="hueValue" value="0">
-                        </div>
-                        <div class="control-group">
-                            <label>模糊</label>
-                            <input type="range" id="blur" min="0" max="20" value="0">
-                            <input type="number" id="blurValue" value="0">
-                        </div>
-                        <div class="control-group">
-                            <label>锐化</label>
-                            <input type="range" id="sharpen" min="0" max="100" value="0">
-                            <input type="number" id="sharpenValue" value="0">
-                        </div>
-                    </div>
-                    <div class="canvas-container" id="canvasContainer">
-                        <div class="dropzone" id="dropzone">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>拖放图片到此处</p>
-                            <p>或点击上传按钮</p>
-                        </div>
-                        <canvas id="imageCanvas"></canvas>
+            </div>
+
+            <div class="preview-section">
+                <h3 class="section-title">预览区</h3>
+                <div class="preview-area" id="previewArea">
+                    <div class="upload-hint">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖放图片到此处或点击选择图片按钮</p>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
-    <input type="file" id="fileInput" accept="image/*" style="display: none;">
-    <script src="../script.js"></script>
+
+    <div class="loading" id="loading">
+        <div>
+            <i class="fas fa-spinner fa-spin"></i>
+            处理中...
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const imageEditor = {
-                canvas: document.getElementById('imageCanvas'),
-                dropzone: document.getElementById('dropzone'),
-                fileInput: document.getElementById('fileInput'),
-                uploadBtn: document.getElementById('uploadBtn'),
-                saveBtn: document.getElementById('saveBtn'),
-                resetBtn: document.getElementById('resetBtn'),
-                originalImage: null,
-                currentImage: null,
+        const imageInput = document.getElementById('imageInput');
+        const previewArea = document.getElementById('previewArea');
+        const loading = document.getElementById('loading');
+        let currentImage = null;
+        let originalImage = null;
+        let currentRotation = 0;
+        let currentFlipH = false;
+        let currentFlipV = false;
+        let editHistory = [];
+        let currentHistoryIndex = -1;
 
-                init() {
-                    this.ctx = this.canvas.getContext('2d');
-                    this.bindEvents();
-                    this.setupControls();
-                },
-
-                bindEvents() {
-                    // 上传按钮点击事件
-                    this.uploadBtn.addEventListener('click', () => {
-                        this.fileInput.click();
-                    });
-
-                    // 文件选择事件
-                    this.fileInput.addEventListener('change', (e) => {
-                        if (e.target.files && e.target.files[0]) {
-                            this.loadImage(e.target.files[0]);
-                        }
-                    });
-
-                    // 拖放事件
-                    this.dropzone.addEventListener('dragover', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.dropzone.style.backgroundColor = 'rgba(74, 144, 226, 0.1)';
-                    });
-
-                    this.dropzone.addEventListener('dragleave', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.dropzone.style.backgroundColor = '';
-                    });
-
-                    this.dropzone.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        this.dropzone.style.backgroundColor = '';
-                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                            this.loadImage(e.dataTransfer.files[0]);
-                        }
-                    });
-
-                    // 保存按钮点击事件
-                    this.saveBtn.addEventListener('click', () => {
-                        const link = document.createElement('a');
-                        link.download = 'edited-image.png';
-                        link.href = this.canvas.toDataURL();
-                        link.click();
-                    });
-
-                    // 重置按钮点击事件
-                    this.resetBtn.addEventListener('click', () => {
-                        if (this.originalImage) {
-                            this.resetControls();
-                            this.drawImage(this.originalImage);
-                        }
-                    });
-                },
-
-                setupControls() {
-                    const controls = ['brightness', 'contrast', 'saturation', 'hue', 'blur', 'sharpen'];
-                    controls.forEach(control => {
-                        const slider = document.getElementById(control);
-                        const value = document.getElementById(`${control}Value`);
-                        
-                        slider.addEventListener('input', () => {
-                            value.value = slider.value;
-                            this.applyFilters();
-                        });
-
-                        value.addEventListener('input', () => {
-                            slider.value = value.value;
-                            this.applyFilters();
-                        });
-                    });
-                },
-
-                loadImage(file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            this.originalImage = img;
-                            this.canvas.width = img.width;
-                            this.canvas.height = img.height;
-                            this.drawImage(img);
-                            this.dropzone.style.display = 'none';
-                            this.canvas.style.display = 'block';
-                            this.saveBtn.disabled = false;
-                            this.resetBtn.disabled = false;
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                },
-
-                drawImage(img) {
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.ctx.drawImage(img, 0, 0);
-                    this.currentImage = img;
-                },
-
-                applyFilters() {
-                    if (!this.currentImage) return;
-
-                    const brightness = parseInt(document.getElementById('brightness').value);
-                    const contrast = parseInt(document.getElementById('contrast').value);
-                    const saturation = parseInt(document.getElementById('saturation').value);
-                    const hue = parseInt(document.getElementById('hue').value);
-                    const blur = parseInt(document.getElementById('blur').value);
-                    const sharpen = parseInt(document.getElementById('sharpen').value);
-
-                    this.ctx.filter = `
-                        brightness(${100 + brightness}%)
-                        contrast(${100 + contrast}%)
-                        saturate(${100 + saturation}%)
-                        hue-rotate(${hue}deg)
-                        blur(${blur}px)
-                    `;
-
-                    this.drawImage(this.originalImage);
-                    this.ctx.filter = 'none';
-                },
-
-                resetControls() {
-                    const controls = ['brightness', 'contrast', 'saturation', 'hue', 'blur', 'sharpen'];
-                    controls.forEach(control => {
-                        const slider = document.getElementById(control);
-                        const value = document.getElementById(`${control}Value`);
-                        slider.value = control === 'hue' ? '0' : '0';
-                        value.value = control === 'hue' ? '0' : '0';
-                    });
-                }
+        // 保存当前状态到历史记录
+        function saveToHistory() {
+            const state = {
+                image: currentImage.src,
+                rotation: currentRotation,
+                flipH: currentFlipH,
+                flipV: currentFlipV,
+                brightness: document.getElementById('brightness').value,
+                contrast: document.getElementById('contrast').value,
+                saturation: document.getElementById('saturation').value
             };
 
-            imageEditor.init();
+            // 如果当前不是最新状态，删除之后的历史
+            if (currentHistoryIndex < editHistory.length - 1) {
+                editHistory = editHistory.slice(0, currentHistoryIndex + 1);
+            }
+
+            editHistory.push(state);
+            currentHistoryIndex = editHistory.length - 1;
+        }
+
+        // 返回上一步
+        function undoLastStep() {
+            if (currentHistoryIndex > 0) {
+                currentHistoryIndex--;
+                const state = editHistory[currentHistoryIndex];
+                
+                // 恢复状态
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    currentRotation = state.rotation;
+                    currentFlipH = state.flipH;
+                    currentFlipV = state.flipV;
+                    
+                    // 恢复滑块值
+                    document.getElementById('brightness').value = state.brightness;
+                    document.getElementById('contrast').value = state.contrast;
+                    document.getElementById('saturation').value = state.saturation;
+                    
+                    // 更新滑块显示值
+                    document.getElementById('brightnessValue').textContent = state.brightness + '%';
+                    document.getElementById('contrastValue').textContent = state.contrast + '%';
+                    document.getElementById('saturationValue').textContent = state.saturation + '%';
+                    
+                    updatePreview();
+                };
+                img.src = state.image;
+            }
+        }
+
+        // 重置图片
+        function resetImage() {
+            if (originalImage) {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    currentRotation = 0;
+                    currentFlipH = false;
+                    currentFlipV = false;
+                    
+                    // 重置滑块值
+                    document.getElementById('brightness').value = 100;
+                    document.getElementById('contrast').value = 100;
+                    document.getElementById('saturation').value = 100;
+                    
+                    // 更新滑块显示值
+                    document.getElementById('brightnessValue').textContent = '100%';
+                    document.getElementById('contrastValue').textContent = '100%';
+                    document.getElementById('saturationValue').textContent = '100%';
+                    
+                    updatePreview();
+                    saveToHistory();
+                };
+                img.src = originalImage.src;
+            }
+        }
+
+        // 拖放处理
+        previewArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            previewArea.classList.add('dragover');
+        });
+
+        previewArea.addEventListener('dragleave', () => {
+            previewArea.classList.remove('dragover');
+        });
+
+        previewArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            previewArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        });
+
+        imageInput.addEventListener('change', () => {
+            if (imageInput.files[0]) {
+                handleImageUpload(imageInput.files[0]);
+            }
+        });
+
+        // 处理图片上传
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    originalImage = img; // 保存原始图片
+                    editHistory = []; // 清空历史记录
+                    currentHistoryIndex = -1;
+                    updatePreview();
+                    saveToHistory(); // 保存初始状态
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 更新预览
+        function updatePreview() {
+            if (!currentImage) return;
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            if (currentFlipH) ctx.scale(-1, 1);
+            if (currentFlipV) ctx.scale(1, -1);
+            ctx.translate(-canvas.width/2, -canvas.height/2);
+
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+            const saturation = document.getElementById('saturation').value;
+
+            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            ctx.drawImage(currentImage, 0, 0);
+            ctx.restore();
+
+            previewArea.innerHTML = '';
+            const previewImg = document.createElement('img');
+            previewImg.src = canvas.toDataURL('image/png');
+            previewArea.appendChild(previewImg);
+        }
+
+        // 旋转图片
+        function rotateImage(degrees) {
+            currentRotation = (currentRotation + degrees) % 360;
+            updatePreview();
+            saveToHistory();
+        }
+
+        // 翻转图片
+        function flipImage(direction) {
+            if (direction === 'horizontal') {
+                currentFlipH = !currentFlipH;
+            } else {
+                currentFlipV = !currentFlipV;
+            }
+            updatePreview();
+            saveToHistory();
+        }
+
+        // 应用滤镜
+        function applyFilter(filter) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+
+            switch(filter) {
+                case 'grayscale':
+                    ctx.filter = 'grayscale(100%)';
+                    break;
+                case 'sepia':
+                    ctx.filter = 'sepia(100%)';
+                    break;
+                case 'blur':
+                    ctx.filter = 'blur(5px)';
+                    break;
+                default:
+                    ctx.filter = 'none';
+            }
+
+            ctx.drawImage(currentImage, 0, 0);
+            const newImage = new Image();
+            newImage.src = canvas.toDataURL('image/png');
+            newImage.onload = () => {
+                currentImage = newImage;
+                updatePreview();
+                saveToHistory();
+            };
+        }
+
+        // 下载图片
+        function downloadImage() {
+            if (!currentImage) return;
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+
+            // 应用所有效果
+            ctx.save();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            if (currentFlipH) ctx.scale(-1, 1);
+            if (currentFlipV) ctx.scale(1, -1);
+            ctx.translate(-canvas.width/2, -canvas.height/2);
+
+            const brightness = document.getElementById('brightness').value;
+            const contrast = document.getElementById('contrast').value;
+            const saturation = document.getElementById('saturation').value;
+
+            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            ctx.drawImage(currentImage, 0, 0);
+            ctx.restore();
+
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = 'edited_image.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 滑块值显示和历史记录
+        document.querySelectorAll('input[type="range"]').forEach(input => {
+            const valueSpan = document.getElementById(input.id + 'Value');
+            input.addEventListener('input', () => {
+                valueSpan.textContent = input.value + '%';
+                updatePreview();
+            });
+            input.addEventListener('change', () => {
+                saveToHistory();
+            });
         });
     </script>
 </body>
