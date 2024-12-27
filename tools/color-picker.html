@@ -258,6 +258,29 @@
                 flex-direction: column;
             }
         }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button-group .copy-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 4px;
+        }
+
+        .button-group .copy-btn:hover {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
     </style>
 </head>
 <body>
@@ -281,10 +304,16 @@
                         <input type="text" id="hexInput" class="color-input" placeholder="#000000" maxlength="7">
                         <input type="text" id="rgbInput" class="color-input" placeholder="rgb(0, 0, 0)" readonly>
                     </div>
-                    <button class="copy-btn" onclick="saveCurrentColor()">
-                        <i class="fas fa-save"></i>
-                        保存
-                    </button>
+                    <div class="button-group">
+                        <button class="copy-btn" onclick="saveCurrentColor()">
+                            <i class="fas fa-save"></i>
+                            保存
+                        </button>
+                        <button class="copy-btn" onclick="resetSavedColors()">
+                            <i class="fas fa-sync-alt"></i>
+                            重置
+                        </button>
+                    </div>
                 </div>
                 <div class="saved-colors" id="savedColors"></div>
             </div>
@@ -533,6 +562,14 @@
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
+        }
+
+        // 重置保存的颜色
+        function resetSavedColors() {
+            if (confirm('确定要清空所有保存的颜色吗？')) {
+                localStorage.removeItem('savedColors');
+                loadSavedColors();
+            }
         }
     </script>
 </body>
