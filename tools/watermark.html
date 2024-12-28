@@ -406,6 +406,11 @@
                             <input type="checkbox" id="randomSize"> 随机大小
                         </label>
                     </div>
+                    <div class="control-item">
+                        <label>
+                            <input type="checkbox" id="randomPosition"> 随机位置
+                        </label>
+                    </div>
                 </div>
 
                 <div class="control-group">
@@ -542,6 +547,7 @@
                 count: parseInt(document.getElementById('count').value),
                 randomRotation: document.getElementById('randomRotation').checked,
                 randomSize: document.getElementById('randomSize').checked,
+                randomPosition: document.getElementById('randomPosition').checked,
                 imageSize: parseInt(document.getElementById('imageSize').value)
             };
 
@@ -566,23 +572,26 @@
             
             if (watermarkType === 'text' && settings.text) {
                 ctx.fillStyle = settings.textColor;
-                ctx.font = `${optimizedSettings.fontSize}px Arial`;
-                const textWidth = ctx.measureText(settings.text).width;
-                const textHeight = optimizedSettings.fontSize;
-
-                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                const { rows, cols } = optimizedSettings;
                 let count = 0;
 
                 for (let row = 0; row < rows && count < settings.count; row++) {
                     for (let col = 0; col < cols && count < settings.count; col++) {
-                        const x = col * gridWidth + margin + (gridWidth - textWidth) / 2;
-                        const y = row * gridHeight + margin + (gridHeight + textHeight) / 2;
+                        const fontSize = settings.randomSize ? 
+                            getRandomSize(settings, optimizedSettings) : 
+                            optimizedSettings.fontSize;
+                        
+                        ctx.font = `${fontSize}px Arial`;
+                        const textWidth = ctx.measureText(settings.text).width;
+                        const textHeight = fontSize;
+
+                        const pos = getWatermarkPosition(settings, optimizedSettings, count, textWidth, textHeight);
                         const rotation = settings.randomRotation ? 
                             Math.random() * 360 : 
                             settings.rotation;
 
                         ctx.save();
-                        ctx.translate(x, y);
+                        ctx.translate(pos.x, pos.y);
                         ctx.rotate(rotation * Math.PI / 180);
                         ctx.fillText(settings.text, 0, 0);
                         ctx.restore();
@@ -598,22 +607,23 @@
                             const img = new Image();
                             img.onload = function() {
                                 const aspectRatio = img.width / img.height;
-                                const watermarkWidth = optimizedSettings.watermarkSize;
-                                const watermarkHeight = watermarkWidth / aspectRatio;
-
-                                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                                const { rows, cols } = optimizedSettings;
                                 let count = 0;
 
                                 for (let row = 0; row < rows && count < settings.count; row++) {
                                     for (let col = 0; col < cols && count < settings.count; col++) {
-                                        const x = col * gridWidth + margin + (gridWidth - watermarkWidth) / 2;
-                                        const y = row * gridHeight + margin + (gridHeight - watermarkHeight) / 2;
+                                        const watermarkWidth = settings.randomSize ? 
+                                            getRandomSize(settings, optimizedSettings) : 
+                                            optimizedSettings.watermarkSize;
+                                        const watermarkHeight = watermarkWidth / aspectRatio;
+
+                                        const pos = getWatermarkPosition(settings, optimizedSettings, count, watermarkWidth, watermarkHeight);
                                         const rotation = settings.randomRotation ? 
                                             Math.random() * 360 : 
                                             settings.rotation;
 
                                         ctx.save();
-                                        ctx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                                        ctx.translate(pos.x + watermarkWidth / 2, pos.y + watermarkHeight / 2);
                                         ctx.rotate(rotation * Math.PI / 180);
                                         ctx.drawImage(img, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
                                         ctx.restore();
@@ -634,18 +644,19 @@
 
         // 优化水印布局
         function optimizeWatermarkLayout(canvasWidth, canvasHeight, settings, type) {
-            // 计算最佳水印大小和间距
-            const minMargin = 10; // 减小最小边距
-            const spacing = 0.1; // 减小水印之间的间距比例
+            const minMargin = 10;
+            const spacing = 0.1;
             
             let baseSize;
             if (type === 'text') {
-                // 减小文字水印基础大小
                 baseSize = Math.min(canvasWidth * 0.1, settings.fontSize);
             } else {
-                // 减小图片水印基础大小
                 baseSize = Math.min(canvasWidth * 0.15, canvasWidth * (settings.imageSize / 100));
             }
+
+            // 添加随机大小的范围
+            const minSize = baseSize * 0.7;  // 最小为基础大小的70%
+            const maxSize = baseSize * 1.3;  // 最大为基础大小的130%
 
             // 计算网格
             const effectiveWidth = canvasWidth - 2 * minMargin;
@@ -655,11 +666,9 @@
             const targetCount = settings.count;
             const aspectRatio = canvasWidth / canvasHeight;
             
-            // 优化行列数计算
             let cols = Math.ceil(Math.sqrt(targetCount * aspectRatio));
             let rows = Math.ceil(targetCount / cols);
 
-            // 确保行列数的乘积正好等于目标数量
             while (rows * cols > targetCount) {
                 if ((cols - 1) * rows >= targetCount) {
                     cols--;
@@ -670,7 +679,6 @@
                 }
             }
 
-            // 如果行列数的乘积小于目标数量，增加行数或列数
             if (rows * cols < targetCount) {
                 if (cols <= rows) {
                     cols++;
@@ -683,21 +691,15 @@
             const gridWidth = effectiveWidth / cols;
             const gridHeight = effectiveHeight / rows;
             
-            // 计算水印大小，考虑间距
             const watermarkSize = Math.min(
                 gridWidth * (1 - spacing),
                 gridHeight * (1 - spacing),
                 baseSize
             );
 
-            // 计算边距，确保水印均匀分布
             const horizontalMargin = (canvasWidth - cols * gridWidth) / 2;
             const verticalMargin = (canvasHeight - rows * gridHeight) / 2;
             const margin = Math.max(horizontalMargin, verticalMargin, minMargin);
-
-            // 保持用户设置的旋转角度
-            const rotation = settings.rotation;
-            const maxRotation = 360; // 允许完整的旋转角度
 
             return {
                 fontSize: type === 'text' ? watermarkSize : settings.fontSize,
@@ -707,10 +709,23 @@
                 gridWidth: gridWidth,
                 gridHeight: gridHeight,
                 margin: margin,
-                rotation: rotation,
-                maxRotation: maxRotation,
-                totalCount: rows * cols
+                rotation: settings.rotation,
+                maxRotation: 360,
+                totalCount: rows * cols,
+                randomPosition: settings.randomPosition,
+                randomSize: settings.randomSize,
+                minSize: minSize,
+                maxSize: maxSize
             };
+        }
+
+        // 获取随机大小
+        function getRandomSize(settings, optimizedSettings) {
+            if (settings.randomSize) {
+                return optimizedSettings.minSize + 
+                       Math.random() * (optimizedSettings.maxSize - optimizedSettings.minSize);
+            }
+            return optimizedSettings.watermarkSize;
         }
 
         // 水印图片上传处理
@@ -743,19 +758,18 @@
                 const textWidth = ctx.measureText(settings.text).width;
                 const textHeight = optimizedSettings.fontSize;
 
-                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                const { rows, cols } = optimizedSettings;
                 let count = 0;
 
                 for (let row = 0; row < rows && count < settings.count; row++) {
                     for (let col = 0; col < cols && count < settings.count; col++) {
-                        const x = col * gridWidth + margin + (gridWidth - textWidth) / 2;
-                        const y = row * gridHeight + margin + (gridHeight + textHeight) / 2;
+                        const pos = getWatermarkPosition(settings, optimizedSettings, count, textWidth, textHeight);
                         const rotation = settings.randomRotation ? 
                             Math.random() * 360 : 
                             settings.rotation;
 
                         ctx.save();
-                        ctx.translate(x, y);
+                        ctx.translate(pos.x, pos.y);
                         ctx.rotate(rotation * Math.PI / 180);
                         ctx.fillText(settings.text, 0, 0);
                         ctx.restore();
@@ -774,19 +788,18 @@
                                 const watermarkWidth = optimizedSettings.watermarkSize;
                                 const watermarkHeight = watermarkWidth / aspectRatio;
 
-                                const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+                                const { rows, cols } = optimizedSettings;
                                 let count = 0;
 
                                 for (let row = 0; row < rows && count < settings.count; row++) {
                                     for (let col = 0; col < cols && count < settings.count; col++) {
-                                        const x = col * gridWidth + margin + (gridWidth - watermarkWidth) / 2;
-                                        const y = row * gridHeight + margin + (gridHeight - watermarkHeight) / 2;
+                                        const pos = getWatermarkPosition(settings, optimizedSettings, count, watermarkWidth, watermarkHeight);
                                         const rotation = settings.randomRotation ? 
                                             Math.random() * 360 : 
                                             settings.rotation;
 
                                         ctx.save();
-                                        ctx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                                        ctx.translate(pos.x + watermarkWidth / 2, pos.y + watermarkHeight / 2);
                                         ctx.rotate(rotation * Math.PI / 180);
                                         ctx.drawImage(img, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
                                         ctx.restore();
@@ -827,6 +840,7 @@
                 count: parseInt(document.getElementById('count').value),
                 randomRotation: document.getElementById('randomRotation').checked,
                 randomSize: document.getElementById('randomSize').checked,
+                randomPosition: document.getElementById('randomPosition').checked,
                 imageSize: parseInt(document.getElementById('imageSize').value)
             };
 
@@ -850,6 +864,31 @@
                 alert('处理图片时出错: ' + error.message);
             } finally {
                 loading.style.display = 'none';
+            }
+        }
+
+        function getWatermarkPosition(settings, optimizedSettings, index, textWidth, textHeight) {
+            const { rows, cols, gridWidth, gridHeight, margin } = optimizedSettings;
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+
+            if (settings.randomPosition) {
+                // 在网格内随机位置
+                const minX = col * gridWidth + margin;
+                const maxX = minX + gridWidth - textWidth;
+                const minY = row * gridHeight + margin;
+                const maxY = minY + gridHeight - textHeight;
+                
+                return {
+                    x: minX + Math.random() * (maxX - minX),
+                    y: minY + Math.random() * (maxY - minY)
+                };
+            } else {
+                // 居中对齐
+                return {
+                    x: col * gridWidth + margin + (gridWidth - textWidth) / 2,
+                    y: row * gridHeight + margin + (gridHeight + textHeight) / 2
+                };
             }
         }
     </script>
